@@ -1,0 +1,43 @@
+# For the setup, see this blog.
+# This should be a deploy stage not a run job
+# Also need a delete stage before hand
+# https://kb.armory.io/s/article/Run-a-Generic-Shell-Script-with-Spinnaker
+
+apiVersion: v1
+data:
+  script.sh: |-
+    echo "Hello world!"
+    echo "Hello world 2!"
+    echo "Hello world 3"
+    # kubectl get pods
+kind: ConfigMap
+metadata:
+  name: script-configmap
+  namespace: default
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: script-job
+  name: script-job
+  namespace: default
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      containers:
+        - command:
+            - sh
+            - /opt/script/script.sh
+          image: 'bitnami/kubectl:1.12'
+          name: script
+          volumeMounts:
+            - mountPath: /opt/script
+              name: script-configmap
+              readOnly: false
+      restartPolicy: Never
+      volumes:
+        - configMap:
+            name: script-configmap
+          name: script-configmap
